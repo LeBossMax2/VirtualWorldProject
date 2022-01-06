@@ -168,10 +168,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7bcb21a096e764c79895348df46622a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  roadPrefab: {fileID: 8332670115770643557, guid: f895b722a9ce23047af167d2c779ec8b, type: 3}
+  roadPrefabs:
+  - {fileID: 8332670115770643557, guid: f895b722a9ce23047af167d2c779ec8b, type: 3}
+  - {fileID: 8332670115770643557, guid: f895b722a9ce23047af167d2c779ec8b, type: 3}
+  - {fileID: 5203248914766391988, guid: f7ca54cb13459e94a8c63322745e05ed, type: 3}
   land: {fileID: 2100000, guid: 78f10ad2e5c4e444d993c6ca2d411356, type: 2}
   tx: {fileID: 0}
   carPrefabs:
+  - {fileID: 1837629622170580042, guid: 1d268ea7f1cfa7a4dabd97a04b7d94f4, type: 3}
   - {fileID: 1837629622170580042, guid: 1d268ea7f1cfa7a4dabd97a04b7d94f4, type: 3}
   - {fileID: 2644934760319714282, guid: 68a2f8dfcb3350849a969274e8657b68, type: 3}
   pointCount: 100

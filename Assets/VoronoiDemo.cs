@@ -7,7 +7,7 @@ using UnityEngine.AI;
 
 public class VoronoiDemo : MonoBehaviour
 {
-	public GameObject roadPrefab;
+	public List<GameObject> roadPrefabs;
     public Material land;
     public Texture2D tx;
 
@@ -104,6 +104,7 @@ public class VoronoiDemo : MonoBehaviour
     private void CreateRoad(Vector2 left, Vector2 right)
     {
 		Vector2 delta = right - left;
+		GameObject roadPrefab = roadPrefabs[Random.Range(0, roadPrefabs.Count)];
 		GameObject road = Instantiate(roadPrefab, transform.position + new Vector3(left.x, 0, left.y), transform.rotation * Quaternion.LookRotation(new Vector3(delta.x, 0, delta.y)), transform);
 		road.transform.localScale = new Vector3(1, 1, delta.magnitude);
 
