@@ -5,6 +5,9 @@ TagManager:
   serializedVersion: 2
   tags:
   - Car
+  - Ambulance
+  - Bike
+  - Police
   layers:
   - Default
   - TransparentFX

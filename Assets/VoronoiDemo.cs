@@ -12,6 +12,10 @@ public class VoronoiDemo : MonoBehaviour
     public Texture2D tx;
 
 	public List<Car> carPrefabs = new List<Car>();
+	public Ambulance ambulancePrefab;
+	public Ambulance ambulance = null;
+	public Police policePrefab;
+	public Police police = null;
 
 	// Cell count
 	public int pointCount = 1000;
@@ -19,6 +23,7 @@ public class VoronoiDemo : MonoBehaviour
 	// Image resolution
     public int width = 400;
     public int height = 400;
+	public float[,] map;
 
     private List<Vector2> m_points;
 	private List<LineSegment> m_edges = null;
@@ -36,7 +41,7 @@ public class VoronoiDemo : MonoBehaviour
 
 	void Start ()
 	{
-        float[,] map = createMap();
+        map = createMap();
         Color[] pixels = createPixelMap(map);
 
         /* Create random points points */
@@ -110,6 +115,17 @@ public class VoronoiDemo : MonoBehaviour
 
 		Car car = Instantiate(carPrefabs[Random.Range(0, carPrefabs.Count)], transform.position + new Vector3(left.x + delta.x / 2, 0.1f, left.y + delta.y / 2), Quaternion.identity);
 		car.City = this;
+
+		if (ambulance == null)
+		{
+			ambulance = Instantiate(ambulancePrefab, transform.position + new Vector3(left.x + delta.x / 3, 0.1f, left.y + delta.y / 3), Quaternion.identity);
+			ambulance.City = this;
+		}
+		else if (police == null)
+		{
+			police = Instantiate(policePrefab, transform.position + new Vector3(left.x + 5*delta.x /6 , 0.1f, left.y + 5*delta.y / 6), Quaternion.identity);
+			police.City = this;
+		}
 	}
 
     private Vector2 RandomPoint(float[,] map)
@@ -181,5 +197,15 @@ public class VoronoiDemo : MonoBehaviour
 				y0 += sy;
 			}
 		}
+	}
+
+	public void CallAmbulance(NavMeshAgent agent)
+	{
+		ambulance.CallAmbulance(agent);
+	}
+
+	public void CallPolice(NavMeshAgent agent)
+	{
+		police.CallPolice(agent);
 	}
 }
