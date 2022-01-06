@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Delaunay;
 using Delaunay.Geo;
+using UnityEngine.AI;
 
 public class VoronoiDemo : MonoBehaviour
 {
@@ -10,12 +11,14 @@ public class VoronoiDemo : MonoBehaviour
     public Material land;
     public Texture2D tx;
 
+	public List<Car> carPrefabs = new List<Car>();
+
 	// Cell count
-    public const int NPOINTS = 1000;
+	public int pointCount = 1000;
 
 	// Image resolution
-    public const int WIDTH = 400;
-    public const int HEIGHT = 400;
+    public int width = 400;
+    public int height = 400;
 
     private List<Vector2> m_points;
 	private List<LineSegment> m_edges = null;
@@ -24,9 +27,9 @@ public class VoronoiDemo : MonoBehaviour
 
     private float [,] createMap() 
     {
-        float [,] map = new float[WIDTH, HEIGHT];
-        for (int i = 0; i < WIDTH; i++)
-            for (int j = 0; j < HEIGHT; j++)
+        float [,] map = new float[width, height];
+        for (int i = 0; i < width; i++)
+            for (int j = 0; j < height; j++)
                 map[i, j] = Mathf.Clamp(Mathf.PerlinNoise(0.02f * i + 0.43f, 0.02f * j + 0.22f) * 2.0f - 0.5f, 0.0f, 1.0f);
         return map;
     }
@@ -40,14 +43,14 @@ public class VoronoiDemo : MonoBehaviour
 		m_points = new List<Vector2> ();
 		List<uint> colors = new List<uint> ();
 		/* Randomly pick vertices */
-		for (int i = 0; i < NPOINTS; i++)
+		for (int i = 0; i < pointCount; i++)
         {
             colors.Add(0);
             Vector2 vec = RandomPoint(map);
             m_points.Add(vec);
         }
         /* Generate Graphs */
-        Voronoi v = new Voronoi(m_points, colors, new Rect(0, 0, WIDTH, HEIGHT));
+        Voronoi v = new Voronoi(m_points, colors, new Rect(0, 0, width, height));
 		m_edges = v.VoronoiDiagram();
 		m_spanningTree = v.SpanningTree(KruskalType.MINIMUM);
 		m_delaunayTriangulation = v.DelaunayTriangulation();
@@ -86,28 +89,34 @@ public class VoronoiDemo : MonoBehaviour
 			}
 		}*/
 		/* Apply pixels to texture */
-		tx = new Texture2D(WIDTH, HEIGHT);
+		tx = new Texture2D(width, height);
 		land.SetTexture("_MainTex", tx);
 		tx.SetPixels(pixels);
 		tx.Apply();
+
+		foreach (NavMeshSurface navSirface in GetComponents<NavMeshSurface>())
+		{
+			navSirface.BuildNavMesh();
+		}
 
 	}
 
     private void CreateRoad(Vector2 left, Vector2 right)
     {
 		Vector2 delta = right - left;
-
-		Vector3 dir = new Vector3(delta.x, 0, delta.y).normalized;
 		GameObject road = Instantiate(roadPrefab, transform.position + new Vector3(left.x, 0, left.y), transform.rotation * Quaternion.LookRotation(new Vector3(delta.x, 0, delta.y)), transform);
 		road.transform.localScale = new Vector3(1, 1, delta.magnitude);
+
+		Car car = Instantiate(carPrefabs[Random.Range(0, carPrefabs.Count)], transform.position + new Vector3(left.x + delta.x / 2, 0.1f, left.y + delta.y / 2), Quaternion.identity);
+		car.City = this;
 	}
 
-    private static Vector2 RandomPoint(float[,] map)
+    private Vector2 RandomPoint(float[,] map)
 	{
 		List<System.Tuple<Vector2, float>> candidates = new List<System.Tuple<Vector2, float>>();
 		for (int i = 0; i < 256; i++)
         {
-			Vector2 pos = new Vector2(Random.Range(0, WIDTH), Random.Range(0, HEIGHT));
+			Vector2 pos = new Vector2(Random.Range(0, width), Random.Range(0, height));
 			candidates.Add(System.Tuple.Create(pos, map[(int)pos.x, (int)pos.y]));
 		}
 
@@ -132,17 +141,17 @@ public class VoronoiDemo : MonoBehaviour
     /* Functions to create and draw on a pixel array */
     private Color[] createPixelMap(float[,] map)
     {
-        Color[] pixels = new Color[WIDTH * HEIGHT];
-        for (int i = 0; i < WIDTH; i++)
-            for (int j = 0; j < HEIGHT; j++)
+        Color[] pixels = new Color[width * height];
+        for (int i = 0; i < width; i++)
+            for (int j = 0; j < height; j++)
             {
-                pixels[i + j * WIDTH] = Color.Lerp(Color.white, Color.black, map[i, j]);
+                pixels[i + j * width] = Color.Lerp(Color.white, Color.black, map[i, j]);
             }
         return pixels;
     }
     private void DrawPoint(Color[] pixels, Vector2 p, Color c) {
-		if (p.x < WIDTH && p.x >= 0 && p.y < HEIGHT && p.y >= 0) 
-		    pixels[(int)p.x + (int)p.y * WIDTH]=c;
+		if (p.x < width && p.x >= 0 && p.y < height && p.y >= 0) 
+		    pixels[(int)p.x + (int)p.y * width]=c;
 	}
 	// Bresenham line algorithm
 	private void DrawLine(Color [] pixels, Vector2 p0, Vector2 p1, Color c) {
@@ -157,8 +166,8 @@ public class VoronoiDemo : MonoBehaviour
 		int sy = y0 < y1 ? 1 : -1;
 		int err = dx-dy;
 		while (true) {
-            if (x0 >= 0 && x0 < WIDTH && y0 >= 0 && y0 < HEIGHT)
-    			pixels[x0 + y0 * WIDTH] = c;
+            if (x0 >= 0 && x0 < width && y0 >= 0 && y0 < height)
+    			pixels[x0 + y0 * width] = c;
 
 			if (x0 == x1 && y0 == y1) break;
 			int e2 = 2 * err;
