@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 607193386043337773}
   - component: {fileID: 4701972995683707321}
   - component: {fileID: 7404342244535365627}
-  - component: {fileID: 7451588874011150572}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Ambulance
@@ -82,19 +81,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &7451588874011150572
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5813755467162595478}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &6908590812732059486
 GameObject:
   m_ObjectHideFlags: 0
@@ -138,7 +124,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 6908590812732059486}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 0.5
+  m_Radius: 0.1
   m_Speed: 4
   m_Acceleration: 8
   avoidancePriority: 50
@@ -147,7 +133,7 @@ NavMeshAgent:
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
-  m_Height: 2
+  m_Height: 0.2
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
@@ -165,6 +151,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isWeak: 0
   isThug: 0
+  agentsToHeal: []
+  onDuty: 0
 --- !u!65 &5055000370003329150
 BoxCollider:
   m_ObjectHideFlags: 0
