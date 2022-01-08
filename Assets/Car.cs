@@ -8,7 +8,7 @@ public class Car : MonoBehaviour
     public bool isWeak;
     public bool isThug;
 
-    public VoronoiDemo City { get; set; }
+    public CityBuilder City { get; set; }
     protected NavMeshAgent agent;
     // Start is called before the first frame update
     void Start()
@@ -79,7 +79,7 @@ public class Car : MonoBehaviour
             float val = Random.Range(0.0f, 1.0f);
             if (val*val < City.map[a,b])
             {
-                agent.SetDestination(new Vector3(a, 0, b)); 
+                agent.SetDestination(City.transform.position + new Vector3(a, 0, b)); 
                 break;
             }
         }

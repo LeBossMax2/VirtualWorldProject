@@ -150,7 +150,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 229061714}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -200, y: 0, z: -200}
+  m_LocalPosition: {x: -50, y: 0, z: -50}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 318487843}
@@ -168,19 +168,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7bcb21a096e764c79895348df46622a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  roadPrefabs:
-  - {fileID: 8332670115770643557, guid: f895b722a9ce23047af167d2c779ec8b, type: 3}
-  - {fileID: 8332670115770643557, guid: f895b722a9ce23047af167d2c779ec8b, type: 3}
-  - {fileID: 5203248914766391988, guid: f7ca54cb13459e94a8c63322745e05ed, type: 3}
-  land: {fileID: 2100000, guid: 78f10ad2e5c4e444d993c6ca2d411356, type: 2}
-  tx: {fileID: 0}
   carPrefabs:
   - {fileID: 1837629622170580042, guid: 1d268ea7f1cfa7a4dabd97a04b7d94f4, type: 3}
   - {fileID: 1837629622170580042, guid: 1d268ea7f1cfa7a4dabd97a04b7d94f4, type: 3}
   - {fileID: 2644934760319714282, guid: 68a2f8dfcb3350849a969274e8657b68, type: 3}
-  pointCount: 100
-  width: 400
-  height: 400
+  roadPrefabs:
+  - {fileID: 8332670115770643557, guid: f895b722a9ce23047af167d2c779ec8b, type: 3}
+  - {fileID: 8332670115770643557, guid: f895b722a9ce23047af167d2c779ec8b, type: 3}
+  - {fileID: 5203248914766391988, guid: f7ca54cb13459e94a8c63322745e05ed, type: 3}
+  buildingPrefabs:
+  - {fileID: 4253531153706048002, guid: 0a47944c96056564b924ebba6f2aa530, type: 3}
+  ambulancePrefab: {fileID: 5911888858906196459, guid: e2271aaa0fd0c414093ad452147273a5, type: 3}
+  policePrefab: {fileID: 9212543363711905767, guid: a11f03514da37d643a8b4a2fcfb934f1, type: 3}
+  land: {fileID: 2100000, guid: 78f10ad2e5c4e444d993c6ca2d411356, type: 2}
+  tx: {fileID: 0}
+  buildingCount: 1000
+  pointCount: 50
+  width: 100
+  height: 100
 --- !u!114 &229061717
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -267,7 +272,7 @@ MeshCollider:
   m_GameObject: {fileID: 305494608}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 4
   m_Convex: 0
   m_CookingOptions: 30
@@ -330,7 +335,7 @@ Transform:
   m_GameObject: {fileID: 305494608}
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 40, y: 40, z: 40}
+  m_LocalScale: {x: 10, y: 10, z: 10}
   m_Children: []
   m_Father: {fileID: 318487843}
   m_RootOrder: 1

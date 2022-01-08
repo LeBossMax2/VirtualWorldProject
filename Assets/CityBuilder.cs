@@ -1,31 +1,31 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using Delaunay;
 using Delaunay.Geo;
 using UnityEngine.AI;
 
-public class VoronoiDemo : MonoBehaviour
+public class CityBuilder : MonoBehaviour
 {
-	public List<GameObject> roadPrefabs;
-    public Material land;
-    public Texture2D tx;
-
 	public List<Car> carPrefabs = new List<Car>();
+	public List<GameObject> roadPrefabs = new List<GameObject>();
+	public List<Building> buildingPrefabs = new List<Building>();
 	public Ambulance ambulancePrefab;
-	public Ambulance ambulance = null;
 	public Police policePrefab;
-	public Police police = null;
+	public Material land;
 
-	// Cell count
+	public int buildingCount = 1000;
 	public int pointCount = 1000;
-
-	// Image resolution
     public int width = 400;
     public int height = 400;
 	public float[,] map;
 
-    private List<Vector2> m_points;
+	private Ambulance ambulance = null;
+	private Police police = null;
+	private Texture2D tx;
+
+	private List<Vector2> m_points;
 	private List<LineSegment> m_edges = null;
 	private List<LineSegment> m_spanningTree;
 	private List<LineSegment> m_delaunayTriangulation;
@@ -33,9 +33,14 @@ public class VoronoiDemo : MonoBehaviour
     private float [,] createMap() 
     {
         float [,] map = new float[width, height];
-        for (int i = 0; i < width; i++)
-            for (int j = 0; j < height; j++)
-                map[i, j] = Mathf.Clamp(Mathf.PerlinNoise(0.02f * i + 0.43f, 0.02f * j + 0.22f) * 2.0f - 0.5f, 0.0f, 1.0f);
+		for (int i = 0; i < width; i++)
+		{
+			for (int j = 0; j < height; j++)
+			{
+				float v = Mathf.PerlinNoise(0.02f * i + 0.43f, 0.02f * j + 0.22f) * 1.4f - 0.2f;
+				map[i, j] = Mathf.Clamp(v * v, 0.0f, 1.0f);
+			}
+		}
         return map;
     }
 
@@ -99,11 +104,36 @@ public class VoronoiDemo : MonoBehaviour
 		tx.SetPixels(pixels);
 		tx.Apply();
 
+		StartCoroutine(generateBuildings(map));
+
 		foreach (NavMeshSurface navSirface in GetComponents<NavMeshSurface>())
 		{
 			navSirface.BuildNavMesh();
 		}
 
+	}
+
+	private IEnumerator generateBuildings(float[,] map)
+	{
+		yield return null;
+		for (int b = 0; b < buildingCount; b++)
+		{
+			Building buildingPrefab = buildingPrefabs[Random.Range(0, buildingPrefabs.Count)];
+			Vector2 point;
+			Vector3 pos;
+			Quaternion rotation;
+			do
+			{
+				point = RandomPoint(map);
+				pos = transform.position + new Vector3(point.x, 0, point.y);
+				float angle = Random.Range(0.0f, 360.0f);
+				rotation = transform.rotation * Quaternion.AngleAxis(angle, Vector3.up);
+			}
+			while (Physics.CheckBox(pos + buildingPrefab.collisionArea.center, buildingPrefab.collisionArea.extents, rotation, LayerMask.GetMask("Default", "Road"), QueryTriggerInteraction.Ignore));
+			Building building = Instantiate(buildingPrefab, pos, rotation, transform);
+			float v = map[(int)point.x, (int)point.y];
+			building.transform.localScale = new Vector3(1, 1 + Random.Range(0.0f, 6.0f) * v * v * v, 1);
+		}
 	}
 
     private void CreateRoad(Vector2 left, Vector2 right)
@@ -133,7 +163,7 @@ public class VoronoiDemo : MonoBehaviour
 		List<System.Tuple<Vector2, float>> candidates = new List<System.Tuple<Vector2, float>>();
 		for (int i = 0; i < 256; i++)
         {
-			Vector2 pos = new Vector2(Random.Range(0, width), Random.Range(0, height));
+			Vector2 pos = new Vector2(Random.Range(0.0f, width), Random.Range(0.0f, height));
 			candidates.Add(System.Tuple.Create(pos, map[(int)pos.x, (int)pos.y]));
 		}
 
