@@ -5,11 +5,10 @@ using UnityEngine.AI;
 
 public class Car : MonoBehaviour
 {
-    public bool isWeak;
     public bool isThug;
 
     public CityBuilder City { get; set; }
-    protected NavMeshAgent agent;
+    public NavMeshAgent agent;
     // Start is called before the first frame update
     void Start()
     {
@@ -36,38 +35,13 @@ public class Car : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision collision)
+    protected virtual void OnCollisionEnter(Collision collision)
     {
-        Debug.Log("COLLIDE");
-        if (isWeak)
+        if (isThug && collision.collider.tag == "Police")
         {
-            if (collision.collider.tag == "Car")
-            {
-                Debug.Log("test");
-                StopCoroutine(RandomMove());
-                agent.isStopped=true;
-                City.CallAmbulance(agent);
-                City.CallPolice(collision.collider.GetComponentInParent<NavMeshAgent>());
-                Car script = collision.collider.GetComponentInParent<Car>();
-                script.isThug = true;
-            }
-            if (collision.collider.tag == "Ambulance")
-            {
-                Debug.Log("Ca marche");
-                StartCoroutine(RandomMove());
-                agent.isStopped=false;
-            }
-
+            City.StopPolice(this);
+            Destroy(gameObject, 0.1f);
         }
-        else 
-        {
-            if (isThug && collision.collider.tag == "Police")
-            {
-                Debug.Log("Uh");
-                Destroy(this);
-            }
-        }
-
     }
 
     protected virtual void SetDestination()

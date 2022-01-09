@@ -141,7 +141,7 @@ public class CityBuilder : MonoBehaviour
 		Vector2 delta = right - left;
 		GameObject roadPrefab = roadPrefabs[Random.Range(0, roadPrefabs.Count)];
 		GameObject road = Instantiate(roadPrefab, transform.position + new Vector3(left.x, 0, left.y), transform.rotation * Quaternion.LookRotation(new Vector3(delta.x, 0, delta.y)), transform);
-		road.transform.localScale = new Vector3(1, 1, delta.magnitude);
+		road.transform.localScale = new Vector3(2.5f, 1, delta.magnitude);
 
 		Car car = Instantiate(carPrefabs[Random.Range(0, carPrefabs.Count)], transform.position + new Vector3(left.x + delta.x / 2, 0.1f, left.y + delta.y / 2), Quaternion.identity);
 		car.City = this;
@@ -229,13 +229,23 @@ public class CityBuilder : MonoBehaviour
 		}
 	}
 
-	public void CallAmbulance(NavMeshAgent agent)
+	public void CallAmbulance(Car car)
 	{
-		ambulance.CallAmbulance(agent);
+		ambulance.CallAmbulance(car);
 	}
 
-	public void CallPolice(NavMeshAgent agent)
+	public void CallPolice(Car car)
 	{
-		police.CallPolice(agent);
+		police.CallPolice(car);
+	}
+
+	public void StopAmbulance(Car car)
+	{
+		ambulance.StopAmbulance(car);
+	}
+
+	public void StopPolice(Car car)
+	{
+		police.StopPolice(car);
 	}
 }

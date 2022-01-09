@@ -5,19 +5,22 @@ using UnityEngine.AI;
 
 public class Police : Car
 {
-    public List<NavMeshAgent> agentsToTrack = new List<NavMeshAgent> ();
+    public List<Car> carsToTrack = new List<Car> ();
     public bool onDuty = false;
+    private float onDutySpeed = 6.0f;
+    private float offDutySpeed = 3.5f;
 
     protected override void SetDestination()
     {
         if (onDuty)
         {
-            agent.SetDestination(agentsToTrack[0].nextPosition);
+            agent.SetDestination(carsToTrack[0].agent.nextPosition);
         }
-        else if (agentsToTrack.Count != 0)
+        else if (carsToTrack.Count != 0)
         {
             onDuty = true;
-            agent.SetDestination(agentsToTrack[0].nextPosition);
+            agent.speed = onDutySpeed;
+            agent.SetDestination(carsToTrack[0].agent.nextPosition);
         }
         else 
         {
@@ -49,7 +52,7 @@ public class Police : Car
             do
             {
                 yield return new WaitForSeconds(0.2f);
-                if (agentsToTrack.Count != 0)
+                if (carsToTrack.Count != 0)
                 {
                     ReajustDestination();
                 }
@@ -58,22 +61,34 @@ public class Police : Car
 
             if (onDuty && agent.remainingDistance <= 0.2)
             {
-                agentsToTrack.RemoveAt(0);
                 onDuty = false;
+                agent.speed = offDutySpeed;
             }
         }
     }
 
-    public void CallPolice(NavMeshAgent agent)
+    public void CallPolice(Car car)
     {
         Debug.Log("POLICE");
-        agentsToTrack.Add(agent);
+        if (!carsToTrack.Contains(car))
+        {
+            carsToTrack.Add(car);
+        }
         SetDestination();
+    }
+
+    public void StopPolice(Car car)
+    {
+        if (carsToTrack.Contains(car))
+        {
+            Debug.Log("Removed police");
+            carsToTrack.Remove(car);
+        }
     }
 
     private void ReajustDestination()
     {
-        agent.SetDestination(agentsToTrack[0].nextPosition);
+        agent.SetDestination(carsToTrack[0].agent.nextPosition);
     }
 
 }

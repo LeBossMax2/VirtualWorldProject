@@ -171,7 +171,8 @@ MonoBehaviour:
   carPrefabs:
   - {fileID: 1837629622170580042, guid: 1d268ea7f1cfa7a4dabd97a04b7d94f4, type: 3}
   - {fileID: 1837629622170580042, guid: 1d268ea7f1cfa7a4dabd97a04b7d94f4, type: 3}
-  - {fileID: 2644934760319714282, guid: 68a2f8dfcb3350849a969274e8657b68, type: 3}
+  - {fileID: 1837629622170580042, guid: 1d268ea7f1cfa7a4dabd97a04b7d94f4, type: 3}
+  - {fileID: -5166658182420044813, guid: 68a2f8dfcb3350849a969274e8657b68, type: 3}
   roadPrefabs:
   - {fileID: 8332670115770643557, guid: f895b722a9ce23047af167d2c779ec8b, type: 3}
   - {fileID: 8332670115770643557, guid: f895b722a9ce23047af167d2c779ec8b, type: 3}
@@ -181,7 +182,6 @@ MonoBehaviour:
   ambulancePrefab: {fileID: 5911888858906196459, guid: e2271aaa0fd0c414093ad452147273a5, type: 3}
   policePrefab: {fileID: 9212543363711905767, guid: a11f03514da37d643a8b4a2fcfb934f1, type: 3}
   land: {fileID: 2100000, guid: 78f10ad2e5c4e444d993c6ca2d411356, type: 2}
-  tx: {fileID: 0}
   buildingCount: 1000
   pointCount: 50
   width: 100

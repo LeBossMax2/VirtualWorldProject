@@ -5,17 +5,22 @@ using UnityEngine.AI;
 
 public class Ambulance : Car
 {
-    public List<NavMeshAgent> agentsToHeal = new List<NavMeshAgent> ();
+    public List<Car> carsToHeal = new List<Car> ();
     public bool onDuty = false;
+    public Car test;
+
+    private float onDutySpeed = 5.0f;
+    private float offDutySpeed = 3.5f;
 
     protected override void SetDestination()
     {
         if (onDuty)
         {}
-        else if (agentsToHeal.Count != 0)
+        else if (carsToHeal.Count != 0)
         {
             onDuty = true;
-            agent.SetDestination(agentsToHeal[0].nextPosition);
+            agent.speed = onDutySpeed;
+            agent.SetDestination(carsToHeal[0].agent.nextPosition);
         }
         else 
         {
@@ -47,22 +52,42 @@ public class Ambulance : Car
             do
             {
                 yield return new WaitForSeconds(Random.Range(0.2f, 1.0f));
+                if (carsToHeal.Count != 0)
+                {
+                    ReajustDestination();
+                }
             }
-            while (agent.remainingDistance >= 0.02);
+            while (agent.remainingDistance >= 0.5);
 
-            if (onDuty && agent.remainingDistance <= 0.02)
+            if (onDuty && agent.remainingDistance <= 0.5)
             {
-                agentsToHeal.RemoveAt(0);
                 onDuty = false;
+                agent.speed = offDutySpeed;
             }
         }
     }
 
-    public void CallAmbulance(NavMeshAgent agent)
+    public void CallAmbulance(Car car)
     {
         Debug.Log("AMBULANCE");
-        agentsToHeal.Add(agent);
+        if (!carsToHeal.Contains(car))
+        {
+            carsToHeal.Add(car);
+        }
         SetDestination();
     }
 
+    public void StopAmbulance(Car car)
+    {
+        if (carsToHeal.Contains(car))
+        {
+            Debug.Log("Removed ambulance");
+            carsToHeal.Remove(car);
+        }
+    }
+
+    private void ReajustDestination()
+    {
+        agent.SetDestination(carsToHeal[0].agent.nextPosition);
+    }
 }
