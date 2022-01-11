@@ -7,8 +7,8 @@ public class Police : Car
 {
     public List<Car> carsToTrack = new List<Car> ();
     public bool onDuty = false;
-    private float onDutySpeed = 6.0f;
-    private float offDutySpeed = 3.5f;
+    public float onDutySpeed = 5.0f;
+    public float offDutySpeed = 3.5f;
 
     protected override void SetDestination()
     {
@@ -51,7 +51,11 @@ public class Police : Car
             
             do
             {
-                yield return new WaitForSeconds(0.2f);
+                if (agent.remainingDistance <= 1)
+                    yield return null;
+                else 
+                    yield return new WaitForSeconds(0.2f);
+
                 if (carsToTrack.Count != 0)
                 {
                     ReajustDestination();

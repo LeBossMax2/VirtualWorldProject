@@ -170,20 +170,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   carPrefabs:
   - {fileID: 1837629622170580042, guid: 1d268ea7f1cfa7a4dabd97a04b7d94f4, type: 3}
-  - {fileID: 1837629622170580042, guid: 1d268ea7f1cfa7a4dabd97a04b7d94f4, type: 3}
-  - {fileID: 1837629622170580042, guid: 1d268ea7f1cfa7a4dabd97a04b7d94f4, type: 3}
+  bikePrefabs:
   - {fileID: -5166658182420044813, guid: 68a2f8dfcb3350849a969274e8657b68, type: 3}
   roadPrefabs:
   - {fileID: 8332670115770643557, guid: f895b722a9ce23047af167d2c779ec8b, type: 3}
-  - {fileID: 8332670115770643557, guid: f895b722a9ce23047af167d2c779ec8b, type: 3}
+  bikeRoadPrefabs:
   - {fileID: 5203248914766391988, guid: f7ca54cb13459e94a8c63322745e05ed, type: 3}
+  parkPrefabs:
+  - {fileID: 7439288596018939752, guid: 421b25ed5bee6404ea8112597bdca8dc, type: 3}
   buildingPrefabs:
   - {fileID: 4253531153706048002, guid: 0a47944c96056564b924ebba6f2aa530, type: 3}
   ambulancePrefab: {fileID: 5911888858906196459, guid: e2271aaa0fd0c414093ad452147273a5, type: 3}
   policePrefab: {fileID: 9212543363711905767, guid: a11f03514da37d643a8b4a2fcfb934f1, type: 3}
   land: {fileID: 2100000, guid: 78f10ad2e5c4e444d993c6ca2d411356, type: 2}
+  parkCount: 10
   buildingCount: 1000
   pointCount: 50
+  bikePointCount: 15
   width: 100
   height: 100
 --- !u!114 &229061717

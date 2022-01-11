@@ -2,21 +2,28 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
+using System;
 using Delaunay;
 using Delaunay.Geo;
 using UnityEngine.AI;
+using Random = UnityEngine.Random;
 
 public class CityBuilder : MonoBehaviour
 {
 	public List<Car> carPrefabs = new List<Car>();
+	public List<Car> bikePrefabs = new List<Car>();
 	public List<GameObject> roadPrefabs = new List<GameObject>();
+	public List<GameObject> bikeRoadPrefabs = new List<GameObject>();
+	public List<Building> parkPrefabs = new List<Building>();
 	public List<Building> buildingPrefabs = new List<Building>();
 	public Ambulance ambulancePrefab;
 	public Police policePrefab;
 	public Material land;
 
+	public int parkCount = 1000;
 	public int buildingCount = 1000;
 	public int pointCount = 1000;
+	public int bikePointCount = 1000;
     public int width = 400;
     public int height = 400;
 	public float[,] map;
@@ -72,9 +79,37 @@ public class CityBuilder : MonoBehaviour
 			Vector2 left = (Vector2)seg.p0;
 			Vector2 right = (Vector2)seg.p1;
 			DrawLine (pixels,left, right,color);
-			CreateRoad(left, right);
+			CreateRoad(left, right, roadPrefabs, carPrefabs);
 		}
 
+
+		/* Creat random bike road */
+		List<Vector2> b_points = new List<Vector2> ();
+		List<LineSegment> b_edges;
+		List<LineSegment> b_spanningTree;
+		List<LineSegment> b_delaunayTriangulation;
+		/* Randomly pick vertices */
+		for (int i = 0; i < bikePointCount-5; i++)
+        {
+            colors.Add(0);
+            Vector2 vec = RandomPoint(map, x=>1-2*Math.Abs(x-0.5f));
+            b_points.Add(vec);
+        }
+		
+        /* Generate Graphs */
+        Voronoi vb = new Voronoi(b_points, colors, new Rect(0, 0, width, height));
+		b_edges = vb.VoronoiDiagram();
+		b_spanningTree = vb.SpanningTree(KruskalType.MINIMUM);
+		b_delaunayTriangulation = vb.DelaunayTriangulation();
+
+		/* Shows Voronoi diagram */
+		for (int i = 0; i < b_edges.Count; i++) {
+			LineSegment seg = b_edges [i];				
+			Vector2 left = (Vector2)seg.p0;
+			Vector2 right = (Vector2)seg.p1;
+			DrawLine (pixels,left, right,color);
+			CreateRoad(left, right, bikeRoadPrefabs, bikePrefabs);
+		}
 
 		color = Color.red;
 		/* Shows Delaunay triangulation */
@@ -116,6 +151,25 @@ public class CityBuilder : MonoBehaviour
 	private IEnumerator generateBuildings(float[,] map)
 	{
 		yield return null;
+		for (int b = 0; b < parkCount; b++)
+		{
+			Building parkPrefab = parkPrefabs[Random.Range(0, parkPrefabs.Count)];
+			Vector2 point;
+			Vector3 pos;
+			Quaternion rotation;
+			do
+			{
+				point = RandomPoint(map, x=>1-2*Math.Abs(x-0.5f));
+				pos = transform.position + new Vector3(point.x, 0, point.y);
+				float angle = Random.Range(0.0f, 360.0f);
+				rotation = transform.rotation * Quaternion.AngleAxis(angle, Vector3.up);
+			}
+			while (Physics.CheckBox(pos + parkPrefab.collisionArea.center, parkPrefab.collisionArea.extents, rotation, LayerMask.GetMask("Default", "Road"), QueryTriggerInteraction.Ignore));
+			Building park = Instantiate(parkPrefab, pos, rotation, transform);
+			float v = map[(int)point.x, (int)point.y];
+			park.transform.localScale = new Vector3(1, 1, 1);
+		}
+
 		for (int b = 0; b < buildingCount; b++)
 		{
 			Building buildingPrefab = buildingPrefabs[Random.Range(0, buildingPrefabs.Count)];
@@ -136,14 +190,14 @@ public class CityBuilder : MonoBehaviour
 		}
 	}
 
-    private void CreateRoad(Vector2 left, Vector2 right)
+    private void CreateRoad(Vector2 left, Vector2 right, List<GameObject> roadPrefabList, List<Car> vehiclePrefabList)
     {
 		Vector2 delta = right - left;
-		GameObject roadPrefab = roadPrefabs[Random.Range(0, roadPrefabs.Count)];
+		GameObject roadPrefab = roadPrefabList[Random.Range(0, roadPrefabList.Count)];
 		GameObject road = Instantiate(roadPrefab, transform.position + new Vector3(left.x, 0, left.y), transform.rotation * Quaternion.LookRotation(new Vector3(delta.x, 0, delta.y)), transform);
-		road.transform.localScale = new Vector3(2.5f, 1, delta.magnitude);
+		road.transform.localScale = new Vector3(1, 1, delta.magnitude);
 
-		Car car = Instantiate(carPrefabs[Random.Range(0, carPrefabs.Count)], transform.position + new Vector3(left.x + delta.x / 2, 0.1f, left.y + delta.y / 2), Quaternion.identity);
+		Car car = Instantiate(vehiclePrefabList[Random.Range(0, vehiclePrefabList.Count)], transform.position + new Vector3(left.x + delta.x / 2, 0.1f, left.y + delta.y / 2), Quaternion.identity);
 		car.City = this;
 
 		if (ambulance == null)
@@ -157,14 +211,18 @@ public class CityBuilder : MonoBehaviour
 			police.City = this;
 		}
 	}
-
     private Vector2 RandomPoint(float[,] map)
+	{
+    	return RandomPoint(map, x=>x);
+	}
+
+    private Vector2 RandomPoint(float[,] map, Func<float, float> probaFunc)
 	{
 		List<System.Tuple<Vector2, float>> candidates = new List<System.Tuple<Vector2, float>>();
 		for (int i = 0; i < 256; i++)
         {
 			Vector2 pos = new Vector2(Random.Range(0.0f, width), Random.Range(0.0f, height));
-			candidates.Add(System.Tuple.Create(pos, map[(int)pos.x, (int)pos.y]));
+			candidates.Add(System.Tuple.Create(pos, probaFunc(map[(int)pos.x, (int)pos.y])));
 		}
 
 		float totalWeight = candidates.Sum(tuple => tuple.Item2);

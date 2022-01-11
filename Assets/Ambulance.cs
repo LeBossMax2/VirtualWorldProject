@@ -9,8 +9,8 @@ public class Ambulance : Car
     public bool onDuty = false;
     public Car test;
 
-    private float onDutySpeed = 5.0f;
-    private float offDutySpeed = 3.5f;
+    public float onDutySpeed = 4.5f;
+    public float offDutySpeed = 3.5f;
 
     protected override void SetDestination()
     {

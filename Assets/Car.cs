@@ -9,6 +9,8 @@ public class Car : MonoBehaviour
 
     public CityBuilder City { get; set; }
     public NavMeshAgent agent;
+
+    private float startTime;
     // Start is called before the first frame update
     void Start()
     {
@@ -31,7 +33,7 @@ public class Car : MonoBehaviour
             {
                 yield return new WaitForSeconds(Random.Range(0.2f, 1.0f));
             }
-            while (agent.remainingDistance >= 0.2);
+            while (agent.remainingDistance >= 0.2 && Time.time < startTime + 30.0f);
         }
     }
 
@@ -54,6 +56,7 @@ public class Car : MonoBehaviour
             if (val*val < City.map[a,b])
             {
                 agent.SetDestination(City.transform.position + new Vector3(a, 0, b)); 
+                startTime = Time.time;
                 break;
             }
         }
