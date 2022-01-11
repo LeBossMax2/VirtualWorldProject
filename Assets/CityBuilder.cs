@@ -18,6 +18,7 @@ public class CityBuilder : MonoBehaviour
 	public List<Building> buildingPrefabs = new List<Building>();
 	public Ambulance ambulancePrefab;
 	public Police policePrefab;
+	public GameObject riverPrefab;
 	public Material land;
 
 	public int parkCount = 1000;
@@ -55,6 +56,8 @@ public class CityBuilder : MonoBehaviour
 	{
         map = createMap();
         Color[] pixels = createPixelMap(map);
+
+		GenerateRiver(map, pixels);
 
         /* Create random points points */
 		m_points = new List<Vector2> ();
@@ -218,11 +221,11 @@ public class CityBuilder : MonoBehaviour
 
     private Vector2 RandomPoint(float[,] map, Func<float, float> probaFunc)
 	{
-		List<System.Tuple<Vector2, float>> candidates = new List<System.Tuple<Vector2, float>>();
+		List<Tuple<Vector2, float>> candidates = new List<Tuple<Vector2, float>>();
 		for (int i = 0; i < 256; i++)
         {
-			Vector2 pos = new Vector2(Random.Range(0.0f, width), Random.Range(0.0f, height));
-			candidates.Add(System.Tuple.Create(pos, probaFunc(map[(int)pos.x, (int)pos.y])));
+			Vector2 pos = new Vector2(Random.Range(0, width), Random.Range(0, height));
+			candidates.Add(Tuple.Create(pos, probaFunc(map[(int)pos.x, (int)pos.y])));
 		}
 
 		float totalWeight = candidates.Sum(tuple => tuple.Item2);
@@ -241,6 +244,26 @@ public class CityBuilder : MonoBehaviour
 		return candidates[candidates.Count - 1].Item1;
 	}
 
+	private void GenerateRiver(float[,] map, Color[] pixels)
+	{
+		Vector3 start = new Vector3(width / 2.0f, 0, 0.0f);
+		int i = 0;
+		float sectionSize = 2.0f;
+		while (start.y < height)
+		{
+			float size = Mathf.PerlinNoise(i * 0.05f * sectionSize, 500.0f) * 5.0f + 2.5f;
+			GameObject river = Instantiate(riverPrefab, transform.position + new Vector3(start.x, 0.0f, start.y), transform.rotation, transform);
+			river.transform.localScale = new Vector3(size, 1, size);
+
+			float angle = (Mathf.PerlinNoise(i * 0.05f * sectionSize, 100.0f) - 0.5f) * 300.0f;
+			Quaternion q = Quaternion.AngleAxis(angle, Vector3.forward);
+			Vector3 end = start + q * Vector3.up * sectionSize;
+			DrawLine(pixels, start, end, Color.blue);
+			start = end;
+			//CreateRiver(left, right);
+			i++;
+		}
+	}
 
 
     /* Functions to create and draw on a pixel array */
