@@ -13,6 +13,7 @@ public class CityBuilder : MonoBehaviour
 	public List<Car> carPrefabs = new List<Car>();
 	public List<Car> bikePrefabs = new List<Car>();
 	public List<GameObject> roadPrefabs = new List<GameObject>();
+	public List<GameObject> bridgePrefabs = new List<GameObject>();
 	public List<GameObject> bikeRoadPrefabs = new List<GameObject>();
 	public List<Building> parkPrefabs = new List<Building>();
 	public List<Building> buildingPrefabs = new List<Building>();
@@ -53,11 +54,18 @@ public class CityBuilder : MonoBehaviour
     }
 
 	void Start ()
+    {
+		StartCoroutine(generateMap());
+    }
+
+	private IEnumerator generateMap()
 	{
         map = createMap();
         Color[] pixels = createPixelMap(map);
 
 		GenerateRiver(map, pixels);
+
+		yield return null; // Skip a frame to update collisions
 
         /* Create random points points */
 		m_points = new List<Vector2> ();
@@ -81,8 +89,8 @@ public class CityBuilder : MonoBehaviour
 			LineSegment seg = m_edges [i];				
 			Vector2 left = (Vector2)seg.p0;
 			Vector2 right = (Vector2)seg.p1;
-			DrawLine (pixels,left, right,color);
-			CreateRoad(left, right, roadPrefabs, carPrefabs);
+			//DrawLine (pixels,left, right,color);
+			CreateRoad(left, right, roadPrefabs, carPrefabs, bridgePrefabs);
 		}
 
 
@@ -110,8 +118,8 @@ public class CityBuilder : MonoBehaviour
 			LineSegment seg = b_edges [i];				
 			Vector2 left = (Vector2)seg.p0;
 			Vector2 right = (Vector2)seg.p1;
-			DrawLine (pixels,left, right,color);
-			CreateRoad(left, right, bikeRoadPrefabs, bikePrefabs);
+			//DrawLine (pixels,left, right,color);
+			CreateRoad(left, right, bikeRoadPrefabs, bikePrefabs, new List<GameObject>());
 		}
 
 		color = Color.red;
@@ -142,18 +150,18 @@ public class CityBuilder : MonoBehaviour
 		tx.SetPixels(pixels);
 		tx.Apply();
 
-		StartCoroutine(generateBuildings(map));
-
 		foreach (NavMeshSurface navSirface in GetComponents<NavMeshSurface>())
 		{
 			navSirface.BuildNavMesh();
 		}
 
+		yield return generateBuildings(map);
 	}
 
-	private IEnumerator generateBuildings(float[,] map)
+    private IEnumerator generateBuildings(float[,] map)
 	{
-		yield return null;
+		yield return null; // Skip a frame to update collisions
+
 		for (int b = 0; b < parkCount; b++)
 		{
 			Building parkPrefab = parkPrefabs[Random.Range(0, parkPrefabs.Count)];
@@ -167,7 +175,7 @@ public class CityBuilder : MonoBehaviour
 				float angle = Random.Range(0.0f, 360.0f);
 				rotation = transform.rotation * Quaternion.AngleAxis(angle, Vector3.up);
 			}
-			while (Physics.CheckBox(pos + parkPrefab.collisionArea.center, parkPrefab.collisionArea.extents, rotation, LayerMask.GetMask("Default", "Road"), QueryTriggerInteraction.Ignore));
+			while (Physics.CheckBox(pos + parkPrefab.collisionArea.center, parkPrefab.collisionArea.extents, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
 			Building park = Instantiate(parkPrefab, pos, rotation, transform);
 			float v = map[(int)point.x, (int)point.y];
 			park.transform.localScale = new Vector3(1, 1, 1);
@@ -175,33 +183,63 @@ public class CityBuilder : MonoBehaviour
 
 		for (int b = 0; b < buildingCount; b++)
 		{
-			Building buildingPrefab = buildingPrefabs[Random.Range(0, buildingPrefabs.Count)];
-			Vector2 point;
+			Building buildingPrefab;
 			Vector3 pos;
 			Quaternion rotation;
+			Vector3 scale;
+			Vector3 size;
 			do
 			{
-				point = RandomPoint(map);
+				buildingPrefab = buildingPrefabs[Random.Range(0, buildingPrefabs.Count)];
+				Vector2 point = RandomPoint(map);
 				pos = transform.position + new Vector3(point.x, 0, point.y);
 				float angle = Random.Range(0.0f, 360.0f);
 				rotation = transform.rotation * Quaternion.AngleAxis(angle, Vector3.up);
+				float v = map[(int)point.x, (int)point.y];
+				scale = new Vector3(1, 1 + Random.Range(0.0f, 6.0f) * v * v * v, 1);
+				size = buildingPrefab.collisionArea.size;
+				size.Scale(scale);
 			}
-			while (Physics.CheckBox(pos + buildingPrefab.collisionArea.center, buildingPrefab.collisionArea.extents, rotation, LayerMask.GetMask("Default", "Road"), QueryTriggerInteraction.Ignore));
+			while (Physics.CheckBox(pos + buildingPrefab.collisionArea.min + size / 2, size / 2, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
 			Building building = Instantiate(buildingPrefab, pos, rotation, transform);
-			float v = map[(int)point.x, (int)point.y];
-			building.transform.localScale = new Vector3(1, 1 + Random.Range(0.0f, 6.0f) * v * v * v, 1);
+			building.transform.localScale = scale;
 		}
 	}
 
-    private void CreateRoad(Vector2 left, Vector2 right, List<GameObject> roadPrefabList, List<Car> vehiclePrefabList)
+    private void CreateRoad(Vector2 left, Vector2 right, List<GameObject> roadPrefabList, List<Car> vehiclePrefabList, List<GameObject> bridgePrefabList)
     {
 		Vector2 delta = right - left;
-		GameObject roadPrefab = roadPrefabList[Random.Range(0, roadPrefabList.Count)];
-		GameObject road = Instantiate(roadPrefab, transform.position + new Vector3(left.x, 0, left.y), transform.rotation * Quaternion.LookRotation(new Vector3(delta.x, 0, delta.y)), transform);
-		road.transform.localScale = new Vector3(1, 1, delta.magnitude);
+		Vector3 position = transform.position + new Vector3(left.x, 0, left.y);
+		Quaternion rotation = transform.rotation * Quaternion.LookRotation(new Vector3(delta.x, 0, delta.y));
+		Vector3 size = new Vector3(1, delta.magnitude, delta.magnitude);
+		GameObject prefab;
+		bool bridge = Physics.CheckBox(position + rotation * (size / 2.0f), size / 2.0f, rotation, LayerMask.GetMask("River"), QueryTriggerInteraction.Ignore);
+		if (bridge)
+		{
+			if (bridgePrefabList.Count == 0)
+				return;
+			prefab = bridgePrefabList[Random.Range(0, bridgePrefabList.Count)];
+		}
+		else
+		{
+			prefab = roadPrefabList[Random.Range(0, roadPrefabList.Count)];
+		}
+		GameObject road = Instantiate(prefab, position, rotation, transform);
+		road.transform.localScale = size;
 
-		Car car = Instantiate(vehiclePrefabList[Random.Range(0, vehiclePrefabList.Count)], transform.position + new Vector3(left.x + delta.x / 2, 0.1f, left.y + delta.y / 2), Quaternion.identity);
-		car.City = this;
+		for (int i = 0; i < road.transform.childCount; i++)
+        {
+			Transform child = road.transform.GetChild(i);
+			Vector3 childScale = child.localScale;
+			childScale.y /= delta.magnitude;
+			child.localScale = childScale;
+		}
+
+		if (!bridge && vehiclePrefabList.Count != 0)
+        {
+			Car car = Instantiate(vehiclePrefabList[Random.Range(0, vehiclePrefabList.Count)], transform.position + new Vector3(left.x + delta.x / 2, 0.1f, left.y + delta.y / 2), Quaternion.identity);
+			car.City = this;
+        }
 
 		if (ambulance == null)
 		{
