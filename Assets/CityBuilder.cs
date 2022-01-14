@@ -35,29 +35,15 @@ public class CityBuilder : MonoBehaviour
 	private Police police = null;
 	private Texture2D tx;
 
-    private float [,] createMap() 
+	void Start()
     {
-        float [,] map = new float[width, height];
-		for (int i = 0; i < width; i++)
-		{
-			for (int j = 0; j < height; j++)
-			{
-				float v = Mathf.PerlinNoise(0.02f * i + 0.43f, 0.02f * j + 0.22f) * 1.4f - 0.2f;
-				map[i, j] = Mathf.Clamp(v * v, 0.0f, 1.0f);
-			}
-		}
-        return map;
+		StartCoroutine(GenerateMap());
     }
 
-	void Start ()
-    {
-		StartCoroutine(generateMap());
-    }
-
-	private IEnumerator generateMap()
+	private IEnumerator GenerateMap()
 	{
-        map = createMap();
-        Color[] pixels = createPixelMap(map);
+        map = CreateMap();
+        Color[] pixels = CreatePixelMap(map);
 
 		GenerateRiver(map, pixels);
 
@@ -85,26 +71,7 @@ public class CityBuilder : MonoBehaviour
 			//DrawLine (pixels,left, right,Color.blue);
 			CreateRoad(left, right, bikeRoadPrefabs, bikePrefabs, new List<GameObject>());
 		}
-
-		/* Shows Delaunay triangulation */
-		/*if (m_delaunayTriangulation != null) {
-			for (int i = 0; i < m_delaunayTriangulation.Count; i++) {
-					LineSegment seg = m_delaunayTriangulation [i];				
-					Vector2 left = (Vector2)seg.p0;
-					Vector2 right = (Vector2)seg.p1;
-					DrawLine (pixels,left, right, Color.red);
-			}
-		}*/
-
-		/* Shows spanning tree */
-		/*if (m_spanningTree != null) {
-			for (int i = 0; i< m_spanningTree.Count; i++) {
-				LineSegment seg = m_spanningTree [i];				
-				Vector2 left = (Vector2)seg.p0;
-				Vector2 right = (Vector2)seg.p1;
-				DrawLine (pixels,left, right, Color.black);
-			}
-		}*/
+		
 		/* Apply pixels to texture */
 		tx = new Texture2D(width, height);
 		land.SetTexture("_MainTex", tx);
@@ -121,56 +88,45 @@ public class CityBuilder : MonoBehaviour
 		GenerateBuildings(map);
 	}
 
-    private void GenerateBuildings(float[,] map)
+	private float[,] CreateMap()
 	{
-		for (int b = 0; b < parkCount; b++)
+		float[,] map = new float[width, height];
+		for (int i = 0; i < width; i++)
 		{
-			Building parkPrefab = parkPrefabs[Random.Range(0, parkPrefabs.Count)];
-			Vector2 point;
-			Vector3 pos;
-			Quaternion rotation;
-			do
+			for (int j = 0; j < height; j++)
 			{
-				point = RandomPoint(map, x=>1-2*Math.Abs(x-0.5f));
-				pos = transform.position + new Vector3(point.x, 0, point.y);
-				float angle = Random.Range(0.0f, 360.0f);
-				rotation = transform.rotation * Quaternion.AngleAxis(angle, Vector3.up);
+				float v = Mathf.PerlinNoise(0.02f * i + 0.43f, 0.02f * j + 0.22f) * 1.4f - 0.2f;
+				map[i, j] = Mathf.Clamp(v * v, 0.0f, 1.0f);
 			}
-			while (Physics.CheckBox(pos + parkPrefab.collisionArea.center, parkPrefab.collisionArea.extents, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
-			Building park = Instantiate(parkPrefab, pos, rotation, transform);
-			float v = map[(int)point.x, (int)point.y];
-			park.transform.localScale = new Vector3(1, 1, 1);
 		}
+		return map;
+	}
 
-		for (int b = 0; b < buildingCount; b++)
+	private void GenerateRiver(float[,] map, Color[] pixels)
+	{
+		Vector3 start = new Vector3(width / 2.0f, 0, 0.0f);
+		int i = 0;
+		float sectionSize = 2.0f;
+		while (start.y < height)
 		{
-			Building buildingPrefab;
-			Vector3 pos;
-			Quaternion rotation;
-			Vector3 scale;
-			Vector3 size;
-			do
-			{
-				buildingPrefab = buildingPrefabs[Random.Range(0, buildingPrefabs.Count)];
-				Vector2 point = RandomPoint(map);
-				pos = transform.position + new Vector3(point.x, 0, point.y);
-				float angle = Random.Range(0.0f, 360.0f);
-				rotation = transform.rotation * Quaternion.AngleAxis(angle, Vector3.up);
-				float v = map[(int)point.x, (int)point.y];
-				scale = new Vector3(1, 1 + Random.Range(0.0f, 6.0f) * v * v * v, 1);
-				size = buildingPrefab.collisionArea.size;
-				size.Scale(scale);
-			}
-			while (Physics.CheckBox(pos + buildingPrefab.collisionArea.min + size / 2, size / 2, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
-			Building building = Instantiate(buildingPrefab, pos, rotation, transform);
-			building.transform.localScale = scale;
+			float size = Mathf.PerlinNoise(i * 0.05f * sectionSize, 500.0f) * 5.0f + 2.5f;
+			GameObject river = Instantiate(riverPrefab, transform.position + new Vector3(start.x, 0.0f, start.y), transform.rotation, transform);
+			river.transform.localScale = new Vector3(size, 1, size);
+
+			float angle = (Mathf.PerlinNoise(i * 0.05f * sectionSize, 100.0f) - 0.5f) * 300.0f;
+			Quaternion q = Quaternion.AngleAxis(angle, Vector3.forward);
+			Vector3 end = start + q * Vector3.up * sectionSize;
+			DrawLine(pixels, start, end, Color.blue);
+			start = end;
+			//CreateRiver(left, right);
+			i++;
 		}
 	}
 
 	private List<LineSegment> GenerateGraph(int pointCount, Func<float, float> probaFunc)
 	{
 		/* Create random points points */
-		List<Vector2> m_points = new List<Vector2>();
+		List<Vector2> points = new List<Vector2>();
 		List<uint> colors = new List<uint>();
 
 		/* Randomly pick vertices */
@@ -178,58 +134,37 @@ public class CityBuilder : MonoBehaviour
 		{
 			colors.Add(0);
 			Vector2 vec = RandomPoint(map, probaFunc);
-			m_points.Add(vec);
+			points.Add(vec);
 		}
 
-		Voronoi v = new Voronoi(m_points, colors, new Rect(0, 0, width, height));
+		Voronoi v = new Voronoi(points, colors, new Rect(0, 0, width, height));
 
-		HashSet<Edge> allEdges = new HashSet<Edge>();
-		Dictionary<Vertex, HashSet<Edge>> vertexEdges = new Dictionary<Vertex, HashSet<Edge>>();
+		List<LineSegment> edges = new List<LineSegment>();
 
 		// Find edges per vertex
 		foreach (Edge e in v.Edges())
 		{
-			if (!e.visible)
-				continue;
-			if (!allEdges.Add(e))
-				continue;
+			if (!e.visible) continue;
 
+			bool remove = false;
 			foreach (Side s in new[] { Side.LEFT, Side.RIGHT })
 			{
-				if (e.Vertex(s) == null)
-					continue;
-
-				HashSet<Edge> list;
-				if (!vertexEdges.TryGetValue(e.Vertex(s), out list))
+				Vector2 pos = e.clippedEnds[s].Value;
+				Vector3 position = transform.position + new Vector3(pos.x, 0, pos.y);
+				bool onRiver = Physics.CheckSphere(position, 1.3f / 2, LayerMask.GetMask("River"), QueryTriggerInteraction.Ignore);
+				if (onRiver)
 				{
-					list = new HashSet<Edge>();
-					vertexEdges[e.Vertex(s)] = list;
+					remove = true;
+					break;
 				}
-				list.Add(e);
 			}
+
+			if (remove) continue;
+
+			edges.Add(new LineSegment(e.clippedEnds[Side.LEFT], e.clippedEnds[Side.RIGHT]));
 		}
 
-		// Remove vertices on river
-		foreach (KeyValuePair<Vertex, HashSet<Edge>> pair in vertexEdges)
-		{
-			Vector2 pos = pair.Key.Coord;
-			Vector3 position = transform.position + new Vector3(pos.x, 0, pos.y);
-			bool onRiver = Physics.CheckSphere(position, 0.5f, LayerMask.GetMask("River"), QueryTriggerInteraction.Ignore);
-			if (!onRiver)
-				continue;
-
-			// Remove vertex and only add one edge beetween its neighbors
-			foreach (Edge e in pair.Value)
-			{
-				Vertex neightbor = e.rightVertex == pair.Key ? e.leftVertex : e.rightVertex;
-				if (neightbor != null)
-					vertexEdges[neightbor].Remove(e);
-				allEdges.Remove(e);
-			}
-			pair.Value.Clear();
-		}
-
-		return allEdges.Select(e => new LineSegment(e.clippedEnds[Side.LEFT], e.clippedEnds[Side.RIGHT])).ToList();
+		return edges;
 	}
 
     private void CreateRoad(Vector2 left, Vector2 right, List<GameObject> roadPrefabList, List<Car> vehiclePrefabList, List<GameObject> bridgePrefabList)
@@ -278,7 +213,54 @@ public class CityBuilder : MonoBehaviour
 			police.City = this;
 		}
 	}
-    private Vector2 RandomPoint(float[,] map)
+
+	private void GenerateBuildings(float[,] map)
+	{
+		for (int b = 0; b < parkCount; b++)
+		{
+			Building parkPrefab = parkPrefabs[Random.Range(0, parkPrefabs.Count)];
+			Vector2 point;
+			Vector3 pos;
+			Quaternion rotation;
+			do
+			{
+				point = RandomPoint(map, x => 1 - 2 * Math.Abs(x - 0.5f));
+				pos = transform.position + new Vector3(point.x, 0, point.y);
+				float angle = Random.Range(0.0f, 360.0f);
+				rotation = transform.rotation * Quaternion.AngleAxis(angle, Vector3.up);
+			}
+			while (Physics.CheckBox(pos + parkPrefab.collisionArea.center, parkPrefab.collisionArea.extents, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
+			Building park = Instantiate(parkPrefab, pos, rotation, transform);
+			float v = map[(int)point.x, (int)point.y];
+			park.transform.localScale = new Vector3(1, 1, 1);
+		}
+
+		for (int b = 0; b < buildingCount; b++)
+		{
+			Building buildingPrefab;
+			Vector3 pos;
+			Quaternion rotation;
+			Vector3 scale;
+			Vector3 size;
+			do
+			{
+				buildingPrefab = buildingPrefabs[Random.Range(0, buildingPrefabs.Count)];
+				Vector2 point = RandomPoint(map);
+				pos = transform.position + new Vector3(point.x, 0, point.y);
+				float angle = Random.Range(0.0f, 360.0f);
+				rotation = transform.rotation * Quaternion.AngleAxis(angle, Vector3.up);
+				float v = map[(int)point.x, (int)point.y];
+				scale = new Vector3(1, 1 + Random.Range(0.0f, 6.0f) * v * v * v, 1);
+				size = buildingPrefab.collisionArea.size;
+				size.Scale(scale);
+			}
+			while (Physics.CheckBox(pos + buildingPrefab.collisionArea.min + size / 2, size / 2, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
+			Building building = Instantiate(buildingPrefab, pos, rotation, transform);
+			building.transform.localScale = scale;
+		}
+	}
+
+	private Vector2 RandomPoint(float[,] map)
 	{
     	return RandomPoint(map, x=>x);
 	}
@@ -308,30 +290,9 @@ public class CityBuilder : MonoBehaviour
 		return candidates[candidates.Count - 1].Item1;
 	}
 
-	private void GenerateRiver(float[,] map, Color[] pixels)
-	{
-		Vector3 start = new Vector3(width / 2.0f, 0, 0.0f);
-		int i = 0;
-		float sectionSize = 2.0f;
-		while (start.y < height)
-		{
-			float size = Mathf.PerlinNoise(i * 0.05f * sectionSize, 500.0f) * 5.0f + 2.5f;
-			GameObject river = Instantiate(riverPrefab, transform.position + new Vector3(start.x, 0.0f, start.y), transform.rotation, transform);
-			river.transform.localScale = new Vector3(size, 1, size);
-
-			float angle = (Mathf.PerlinNoise(i * 0.05f * sectionSize, 100.0f) - 0.5f) * 300.0f;
-			Quaternion q = Quaternion.AngleAxis(angle, Vector3.forward);
-			Vector3 end = start + q * Vector3.up * sectionSize;
-			DrawLine(pixels, start, end, Color.blue);
-			start = end;
-			//CreateRiver(left, right);
-			i++;
-		}
-	}
-
 
     /* Functions to create and draw on a pixel array */
-    private Color[] createPixelMap(float[,] map)
+    private Color[] CreatePixelMap(float[,] map)
     {
         Color[] pixels = new Color[width * height];
         for (int i = 0; i < width; i++)
