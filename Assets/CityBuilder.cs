@@ -58,7 +58,7 @@ public class CityBuilder : MonoBehaviour
 			Vector2 left = (Vector2)seg.p0;
 			Vector2 right = (Vector2)seg.p1;
 			//DrawLine (pixels,left, right,Color.blue);
-			CreateRoad(left, right, roadPrefabs, carPrefabs, bridgePrefabs);
+			CreateRoad(new Vector3(left.x, 0, left.y), new Vector3(right.x, 0, right.y), roadPrefabs, carPrefabs, bridgePrefabs);
 		}
 
 		List<LineSegment> bike_edges = GenerateGraph(bikePointCount, x => 1 - 2 * Math.Abs(x - 0.5f));
@@ -69,7 +69,7 @@ public class CityBuilder : MonoBehaviour
 			Vector2 left = (Vector2)seg.p0;
 			Vector2 right = (Vector2)seg.p1;
 			//DrawLine (pixels,left, right,Color.blue);
-			CreateRoad(left, right, bikeRoadPrefabs, bikePrefabs, new List<GameObject>());
+			CreateRoad(new Vector3(left.x, 0, left.y), new Vector3(right.x, 0, right.y), bikeRoadPrefabs, bikePrefabs, new List<GameObject>());
 		}
 		
 		/* Apply pixels to texture */
@@ -167,18 +167,49 @@ public class CityBuilder : MonoBehaviour
 		return edges;
 	}
 
-    private void CreateRoad(Vector2 left, Vector2 right, List<GameObject> roadPrefabList, List<Car> vehiclePrefabList, List<GameObject> bridgePrefabList)
+    private void CreateRoad(Vector3 left, Vector3 right, List<GameObject> roadPrefabList, List<Car> vehiclePrefabList, List<GameObject> bridgePrefabList, int depth = 0)
     {
-		Vector2 delta = right - left;
-		Vector3 position = transform.position + new Vector3(left.x, 0, left.y);
-		Quaternion rotation = transform.rotation * Quaternion.LookRotation(new Vector3(delta.x, 0, delta.y));
+		Vector3 delta = right - left;
+		Vector3 position = transform.position + left;
+		Quaternion rotation = transform.rotation * Quaternion.LookRotation(delta);
 		Vector3 size = new Vector3(1, delta.magnitude, delta.magnitude);
 		GameObject prefab;
-		bool bridge = Physics.CheckBox(position + rotation * (size / 2.0f), size / 2.0f, rotation, LayerMask.GetMask("River"), QueryTriggerInteraction.Ignore);
+		bool bridge = Physics.CheckBox(position + delta / 2.0f, size / 2.0f, rotation, LayerMask.GetMask("River"), QueryTriggerInteraction.Ignore);
 		if (bridge)
 		{
 			if (bridgePrefabList.Count == 0)
 				return;
+
+			// Cut road in 3
+
+			if (depth < 4)
+			{
+				Vector3 p1 = left + delta / 3.0f;
+				Vector3 p2 = left + delta * 2.0f / 3.0f;
+				bool onRiver1 = Physics.CheckSphere(transform.position + p1, 1.3f / 2, LayerMask.GetMask("River"), QueryTriggerInteraction.Ignore);
+				bool onRiver2 = Physics.CheckSphere(transform.position + p2, 1.3f / 2, LayerMask.GetMask("River"), QueryTriggerInteraction.Ignore);
+
+				if (!onRiver1 && !onRiver2)
+				{
+					CreateRoad(left, p1, roadPrefabList, vehiclePrefabList, bridgePrefabList, depth + 1);
+					CreateRoad(p1, p2, roadPrefabList, vehiclePrefabList, bridgePrefabList, depth + 1);
+					CreateRoad(p2, right, roadPrefabList, vehiclePrefabList, bridgePrefabList, depth + 1);
+					return;
+				}
+				else if (!onRiver1 && onRiver2)
+				{
+					CreateRoad(left, p1, roadPrefabList, vehiclePrefabList, bridgePrefabList, depth + 1);
+					CreateRoad(p1, right, roadPrefabList, vehiclePrefabList, bridgePrefabList, depth + 1);
+					return;
+				}
+				else if (!onRiver2 && onRiver1)
+				{
+					CreateRoad(p2, right, roadPrefabList, vehiclePrefabList, bridgePrefabList, depth + 1);
+					CreateRoad(left, p2, roadPrefabList, vehiclePrefabList, bridgePrefabList, depth + 1);
+					return;
+				}
+			}
+
 			prefab = bridgePrefabList[Random.Range(0, bridgePrefabList.Count)];
 		}
 		else
@@ -198,18 +229,18 @@ public class CityBuilder : MonoBehaviour
 
 		if (!bridge && vehiclePrefabList.Count != 0)
         {
-			Car car = Instantiate(vehiclePrefabList[Random.Range(0, vehiclePrefabList.Count)], transform.position + new Vector3(left.x + delta.x / 2, 0.1f, left.y + delta.y / 2), Quaternion.identity);
+			Car car = Instantiate(vehiclePrefabList[Random.Range(0, vehiclePrefabList.Count)], transform.position + left + delta / 2 + Vector3.up * 0.1f, Quaternion.identity);
 			car.City = this;
         }
 
 		if (ambulance == null)
 		{
-			ambulance = Instantiate(ambulancePrefab, transform.position + new Vector3(left.x + delta.x / 3, 0.1f, left.y + delta.y / 3), Quaternion.identity);
+			ambulance = Instantiate(ambulancePrefab, transform.position + left + delta / 3 + Vector3.up * 0.1f, Quaternion.identity);
 			ambulance.City = this;
 		}
 		else if (police == null)
 		{
-			police = Instantiate(policePrefab, transform.position + new Vector3(left.x + 5*delta.x /6 , 0.1f, left.y + 5*delta.y / 6), Quaternion.identity);
+			police = Instantiate(policePrefab, transform.position + left + 5 * delta / 6 + Vector3.up * 0.1f, Quaternion.identity);
 			police.City = this;
 		}
 	}
@@ -254,7 +285,7 @@ public class CityBuilder : MonoBehaviour
 				size = buildingPrefab.collisionArea.size;
 				size.Scale(scale);
 			}
-			while (Physics.CheckBox(pos + buildingPrefab.collisionArea.min + size / 2, size / 2, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
+			while (Physics.CheckBox(pos + rotation * (buildingPrefab.collisionArea.min + size / 2), size / 2, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
 			Building building = Instantiate(buildingPrefab, pos, rotation, transform);
 			building.transform.localScale = scale;
 		}
