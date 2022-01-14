@@ -5,6 +5,7 @@ using System.Linq;
 using System;
 using Delaunay;
 using Delaunay.Geo;
+using Delaunay.LR;
 using UnityEngine.AI;
 using Random = UnityEngine.Random;
 
@@ -34,11 +35,6 @@ public class CityBuilder : MonoBehaviour
 	private Police police = null;
 	private Texture2D tx;
 
-	private List<Vector2> m_points;
-	private List<LineSegment> m_edges = null;
-	private List<LineSegment> m_spanningTree;
-	private List<LineSegment> m_delaunayTriangulation;
-
     private float [,] createMap() 
     {
         float [,] map = new float[width, height];
@@ -65,83 +61,48 @@ public class CityBuilder : MonoBehaviour
 
 		GenerateRiver(map, pixels);
 
-		yield return null; // Skip a frame to update collisions
+		yield return null; // Skip a frame to update river collisions
 
-        /* Create random points points */
-		m_points = new List<Vector2> ();
-		List<uint> colors = new List<uint> ();
-		/* Randomly pick vertices */
-		for (int i = 0; i < pointCount; i++)
-        {
-            colors.Add(0);
-            Vector2 vec = RandomPoint(map);
-            m_points.Add(vec);
-        }
-        /* Generate Graphs */
-        Voronoi v = new Voronoi(m_points, colors, new Rect(0, 0, width, height));
-		m_edges = v.VoronoiDiagram();
-		m_spanningTree = v.SpanningTree(KruskalType.MINIMUM);
-		m_delaunayTriangulation = v.DelaunayTriangulation();
+		/* Generate Graphs */
+		List<LineSegment> graph_edges = GenerateGraph(pointCount, x => x);
 
-		Color color = Color.blue;
 		/* Shows Voronoi diagram */
-		for (int i = 0; i < m_edges.Count; i++) {
-			LineSegment seg = m_edges [i];				
+		for (int i = 0; i < graph_edges.Count; i++) {
+			LineSegment seg = graph_edges[i];
 			Vector2 left = (Vector2)seg.p0;
 			Vector2 right = (Vector2)seg.p1;
-			//DrawLine (pixels,left, right,color);
+			//DrawLine (pixels,left, right,Color.blue);
 			CreateRoad(left, right, roadPrefabs, carPrefabs, bridgePrefabs);
 		}
 
-
-		/* Creat random bike road */
-		List<Vector2> b_points = new List<Vector2> ();
-		List<LineSegment> b_edges;
-		List<LineSegment> b_spanningTree;
-		List<LineSegment> b_delaunayTriangulation;
-		/* Randomly pick vertices */
-		for (int i = 0; i < bikePointCount-5; i++)
-        {
-            colors.Add(0);
-            Vector2 vec = RandomPoint(map, x=>1-2*Math.Abs(x-0.5f));
-            b_points.Add(vec);
-        }
-		
-        /* Generate Graphs */
-        Voronoi vb = new Voronoi(b_points, colors, new Rect(0, 0, width, height));
-		b_edges = vb.VoronoiDiagram();
-		b_spanningTree = vb.SpanningTree(KruskalType.MINIMUM);
-		b_delaunayTriangulation = vb.DelaunayTriangulation();
+		List<LineSegment> bike_edges = GenerateGraph(bikePointCount, x => 1 - 2 * Math.Abs(x - 0.5f));
 
 		/* Shows Voronoi diagram */
-		for (int i = 0; i < b_edges.Count; i++) {
-			LineSegment seg = b_edges [i];				
+		for (int i = 0; i < bike_edges.Count; i++) {
+			LineSegment seg = bike_edges[i];
 			Vector2 left = (Vector2)seg.p0;
 			Vector2 right = (Vector2)seg.p1;
-			//DrawLine (pixels,left, right,color);
+			//DrawLine (pixels,left, right,Color.blue);
 			CreateRoad(left, right, bikeRoadPrefabs, bikePrefabs, new List<GameObject>());
 		}
 
-		color = Color.red;
 		/* Shows Delaunay triangulation */
 		/*if (m_delaunayTriangulation != null) {
 			for (int i = 0; i < m_delaunayTriangulation.Count; i++) {
 					LineSegment seg = m_delaunayTriangulation [i];				
 					Vector2 left = (Vector2)seg.p0;
 					Vector2 right = (Vector2)seg.p1;
-					DrawLine (pixels,left, right,color);
+					DrawLine (pixels,left, right, Color.red);
 			}
 		}*/
 
-        /* Shows spanning tree */
-        
-		/*color = Color.black;
-		if (m_spanningTree != null) {
+		/* Shows spanning tree */
+		/*if (m_spanningTree != null) {
 			for (int i = 0; i< m_spanningTree.Count; i++) {
 				LineSegment seg = m_spanningTree [i];				
 				Vector2 left = (Vector2)seg.p0;
 				Vector2 right = (Vector2)seg.p1;
-				DrawLine (pixels,left, right,color);
+				DrawLine (pixels,left, right, Color.black);
 			}
 		}*/
 		/* Apply pixels to texture */
@@ -155,13 +116,13 @@ public class CityBuilder : MonoBehaviour
 			navSirface.BuildNavMesh();
 		}
 
-		yield return generateBuildings(map);
+		yield return null; // Skip a frame to update road collisions
+
+		GenerateBuildings(map);
 	}
 
-    private IEnumerator generateBuildings(float[,] map)
+    private void GenerateBuildings(float[,] map)
 	{
-		yield return null; // Skip a frame to update collisions
-
 		for (int b = 0; b < parkCount; b++)
 		{
 			Building parkPrefab = parkPrefabs[Random.Range(0, parkPrefabs.Count)];
@@ -204,6 +165,71 @@ public class CityBuilder : MonoBehaviour
 			Building building = Instantiate(buildingPrefab, pos, rotation, transform);
 			building.transform.localScale = scale;
 		}
+	}
+
+	private List<LineSegment> GenerateGraph(int pointCount, Func<float, float> probaFunc)
+	{
+		/* Create random points points */
+		List<Vector2> m_points = new List<Vector2>();
+		List<uint> colors = new List<uint>();
+
+		/* Randomly pick vertices */
+		for (int i = 0; i < pointCount; i++)
+		{
+			colors.Add(0);
+			Vector2 vec = RandomPoint(map, probaFunc);
+			m_points.Add(vec);
+		}
+
+		Voronoi v = new Voronoi(m_points, colors, new Rect(0, 0, width, height));
+
+		HashSet<Edge> allEdges = new HashSet<Edge>();
+		Dictionary<Vertex, HashSet<Edge>> vertexEdges = new Dictionary<Vertex, HashSet<Edge>>();
+
+		// Find edges per vertex
+		foreach (Edge e in v.Edges())
+		{
+			if (!e.visible)
+				continue;
+			if (!allEdges.Add(e))
+				continue;
+
+			foreach (Side s in new[] { Side.LEFT, Side.RIGHT })
+			{
+				if (e.Vertex(s) == null)
+					continue;
+
+				HashSet<Edge> list;
+				if (!vertexEdges.TryGetValue(e.Vertex(s), out list))
+				{
+					list = new HashSet<Edge>();
+					vertexEdges[e.Vertex(s)] = list;
+				}
+				list.Add(e);
+			}
+		}
+
+		// Remove vertices on river
+		foreach (KeyValuePair<Vertex, HashSet<Edge>> pair in vertexEdges)
+		{
+			Vector2 pos = pair.Key.Coord;
+			Vector3 position = transform.position + new Vector3(pos.x, 0, pos.y);
+			bool onRiver = Physics.CheckSphere(position, 0.5f, LayerMask.GetMask("River"), QueryTriggerInteraction.Ignore);
+			if (!onRiver)
+				continue;
+
+			// Remove vertex and only add one edge beetween its neighbors
+			foreach (Edge e in pair.Value)
+			{
+				Vertex neightbor = e.rightVertex == pair.Key ? e.leftVertex : e.rightVertex;
+				if (neightbor != null)
+					vertexEdges[neightbor].Remove(e);
+				allEdges.Remove(e);
+			}
+			pair.Value.Clear();
+		}
+
+		return allEdges.Select(e => new LineSegment(e.clippedEnds[Side.LEFT], e.clippedEnds[Side.RIGHT])).ToList();
 	}
 
     private void CreateRoad(Vector2 left, Vector2 right, List<GameObject> roadPrefabList, List<Car> vehiclePrefabList, List<GameObject> bridgePrefabList)
