@@ -161,7 +161,7 @@ public class CityBuilder : MonoBehaviour
 
 			if (remove) continue;
 
-			edges.Add(new LineSegment(e.clippedEnds[Side.LEFT], e.clippedEnds[Side.RIGHT]));
+			edges.Add(e.VoronoiEdge());
 		}
 
 		return edges;
