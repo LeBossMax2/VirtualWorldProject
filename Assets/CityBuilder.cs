@@ -321,6 +321,18 @@ public class CityBuilder : MonoBehaviour
 		return candidates[candidates.Count - 1].Item1;
 	}
 
+	private Color step(float intensity)
+	{
+		Color[] colors = new []{
+			new Color(0.15f, 0.85f, 0.15f, 1.0f),
+			new Color(0.55f, 0.85f, 0.1f, 1.0f),
+			Color.grey,
+			new Color(0.3f, 0.3f, 0.3f, 1.0f)
+		};
+		int color_index = (int) Mathf.Round(3*Mathf.Sqrt(intensity));
+
+		return colors[color_index];
+	}
 
     /* Functions to create and draw on a pixel array */
     private Color[] CreatePixelMap(float[,] map)
@@ -329,7 +341,7 @@ public class CityBuilder : MonoBehaviour
         for (int i = 0; i < width; i++)
             for (int j = 0; j < height; j++)
             {
-                pixels[i + j * width] = Color.Lerp(Color.white, Color.black, map[i, j]);
+                pixels[i + j * width] = step(map[i, j]);
             }
         return pixels;
     }

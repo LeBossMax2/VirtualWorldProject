@@ -125,7 +125,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 6908590812732059486}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 0.1
+  m_Radius: 0.14
   m_Speed: 4
   m_Acceleration: 8
   avoidancePriority: 50
@@ -155,6 +155,8 @@ MonoBehaviour:
   carsToHeal: []
   onDuty: 0
   test: {fileID: 0}
+  onDutySpeed: 4.5
+  offDutySpeed: 3.5
 --- !u!65 &5055000370003329150
 BoxCollider:
   m_ObjectHideFlags: 0
