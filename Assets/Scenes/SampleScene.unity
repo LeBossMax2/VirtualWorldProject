@@ -182,12 +182,17 @@ MonoBehaviour:
   - {fileID: 7439288596018939752, guid: 421b25ed5bee6404ea8112597bdca8dc, type: 3}
   buildingPrefabs:
   - {fileID: 4253531153706048002, guid: 0a47944c96056564b924ebba6f2aa530, type: 3}
+  treePrefabs:
+  - {fileID: 4218412149625215176, guid: db8b9b5c86c9b4a48a4ce0debfa85b21, type: 3}
+  - {fileID: 8387729518226036683, guid: 5366fc8b15d8a804b866efba38e78688, type: 3}
+  - {fileID: 2104882629739164656, guid: e379d2f179bc8b74b801524fd25fa8fb, type: 3}
   ambulancePrefab: {fileID: 5911888858906196459, guid: e2271aaa0fd0c414093ad452147273a5, type: 3}
   policePrefab: {fileID: 9212543363711905767, guid: a11f03514da37d643a8b4a2fcfb934f1, type: 3}
   riverPrefab: {fileID: 3109889104199805082, guid: d38d1dfd73bc5d84c858270c6f616eba, type: 3}
   land: {fileID: 2100000, guid: 78f10ad2e5c4e444d993c6ca2d411356, type: 2}
-  parkCount: 100
+  parkCount: 10
   buildingCount: 500
+  treeCount: 200
   pointCount: 40
   bikePointCount: 20
   width: 100
@@ -218,7 +223,7 @@ MonoBehaviour:
   m_OverrideTileSize: 0
   m_TileSize: 256
   m_OverrideVoxelSize: 0
-  m_VoxelSize: 0.033333335
+  m_VoxelSize: 0.030000001
   m_BuildHeightMesh: 0
   m_NavMeshData: {fileID: 0}
 --- !u!114 &229061718
@@ -247,7 +252,7 @@ MonoBehaviour:
   m_OverrideTileSize: 0
   m_TileSize: 256
   m_OverrideVoxelSize: 0
-  m_VoxelSize: 0.033333335
+  m_VoxelSize: 0.05
   m_BuildHeightMesh: 0
   m_NavMeshData: {fileID: 0}
 --- !u!1 &305494608

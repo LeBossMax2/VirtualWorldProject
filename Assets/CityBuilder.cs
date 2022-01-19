@@ -18,6 +18,7 @@ public class CityBuilder : MonoBehaviour
 	public List<GameObject> bikeRoadPrefabs = new List<GameObject>();
 	public List<Building> parkPrefabs = new List<Building>();
 	public List<Building> buildingPrefabs = new List<Building>();
+	public List<Building> treePrefabs = new List<Building>();
 	public Ambulance ambulancePrefab;
 	public Police policePrefab;
 	public GameObject riverPrefab;
@@ -25,6 +26,7 @@ public class CityBuilder : MonoBehaviour
 
 	public int parkCount = 1000;
 	public int buildingCount = 1000;
+	public int treeCount = 1000;
 	public int pointCount = 1000;
 	public int bikePointCount = 1000;
     public int width = 400;
@@ -288,6 +290,29 @@ public class CityBuilder : MonoBehaviour
 			while (Physics.CheckBox(pos + rotation * (buildingPrefab.collisionArea.min + size / 2), size / 2, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
 			Building building = Instantiate(buildingPrefab, pos, rotation, transform);
 			building.transform.localScale = scale;
+		}
+		for (int b = 0; b < treeCount; b++)
+		{
+			Building treePrefab;
+			Vector3 pos;
+			Quaternion rotation;
+			Vector3 scale;
+			Vector3 size;
+			do
+			{
+				treePrefab = treePrefabs[Random.Range(0, treePrefabs.Count)];
+				Vector2 point = RandomPoint(map, x => (1 - x) * (1 - x));
+				pos = transform.position + new Vector3(point.x, 0, point.y);
+				float angle = Random.Range(0.0f, 360.0f);
+				rotation = transform.rotation * Quaternion.AngleAxis(angle, Vector3.up);
+				float v = map[(int)point.x, (int)point.y];
+				scale = new Vector3(1, 1, 1);
+				size = treePrefab.collisionArea.size;
+				size.Scale(scale);
+			}
+			while (Physics.CheckBox(pos + rotation * (treePrefab.collisionArea.min + size / 2), size / 2, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
+			Building tree = Instantiate(treePrefab, pos, rotation, transform);
+			tree.transform.localScale = scale;
 		}
 	}
 
