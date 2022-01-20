@@ -19,6 +19,9 @@ public class CityBuilder : MonoBehaviour
 	public List<Building> parkPrefabs = new List<Building>();
 	public List<Building> buildingPrefabs = new List<Building>();
 	public List<Building> treePrefabs = new List<Building>();
+	public List<Building> museumPrefabs = new List<Building>();
+	public List<Building> cityHallPrefabs = new List<Building>();
+	public List<Building> prisonPrefabs = new List<Building>();
 	public Ambulance ambulancePrefab;
 	public Police policePrefab;
 	public GameObject riverPrefab;
@@ -27,6 +30,9 @@ public class CityBuilder : MonoBehaviour
 	public int parkCount = 1000;
 	public int buildingCount = 1000;
 	public int treeCount = 1000;
+	public int museumCount = 1000;
+	public int cityHallCount = 1000;
+	public int prisonCount = 1000;
 	public int pointCount = 1000;
 	public int bikePointCount = 1000;
     public int width = 400;
@@ -87,7 +93,12 @@ public class CityBuilder : MonoBehaviour
 
 		yield return null; // Skip a frame to update road collisions
 
-		GenerateBuildings(map);
+		GenerateBuildings(map, parkPrefabs, parkCount, x => 1 - 2 * Math.Abs(x - 0.5f), x => 1.0f);
+		GenerateBuildings(map, prisonPrefabs, prisonCount, x => x > 0.55f ? x : 0.0f, x => 1.0f);
+		GenerateBuildings(map, cityHallPrefabs, cityHallCount, x => x > 0.5f ? x : 0.0f, x => 1.0f);
+		GenerateBuildings(map, museumPrefabs, museumCount, x => x > 0.5f ? x : 0.0f, x => 1.0f);
+		GenerateBuildings(map, buildingPrefabs, buildingCount, x => x, x => 1.0f + Random.Range(0.0f, 6.0f) * x * x * x);
+		GenerateBuildings(map, treePrefabs, treeCount, x => 1.0f - x, x => 1.0f);
 	}
 
 	private float[,] CreateMap()
@@ -247,72 +258,30 @@ public class CityBuilder : MonoBehaviour
 		}
 	}
 
-	private void GenerateBuildings(float[,] map)
+	private void GenerateBuildings(float[,] map, List<Building> prefabList, int count, Func<float, float> probaFunc, Func<float, float> verticalScale)
 	{
-		for (int b = 0; b < parkCount; b++)
+		for (int b = 0; b < count; b++)
 		{
-			Building parkPrefab = parkPrefabs[Random.Range(0, parkPrefabs.Count)];
+			Building prefab = prefabList[Random.Range(0, prefabList.Count)];
 			Vector2 point;
 			Vector3 pos;
-			Quaternion rotation;
-			do
-			{
-				point = RandomPoint(map, x => 1 - 2 * Math.Abs(x - 0.5f));
-				pos = transform.position + new Vector3(point.x, 0, point.y);
-				float angle = Random.Range(0.0f, 360.0f);
-				rotation = transform.rotation * Quaternion.AngleAxis(angle, Vector3.up);
-			}
-			while (Physics.CheckBox(pos + parkPrefab.collisionArea.center, parkPrefab.collisionArea.extents, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
-			Building park = Instantiate(parkPrefab, pos, rotation, transform);
-			float v = map[(int)point.x, (int)point.y];
-			park.transform.localScale = new Vector3(1, 1, 1);
-		}
-
-		for (int b = 0; b < buildingCount; b++)
-		{
-			Building buildingPrefab;
-			Vector3 pos;
-			Quaternion rotation;
 			Vector3 scale;
 			Vector3 size;
+			Quaternion rotation;
 			do
 			{
-				buildingPrefab = buildingPrefabs[Random.Range(0, buildingPrefabs.Count)];
-				Vector2 point = RandomPoint(map);
+				point = RandomPoint(map, probaFunc); // x => 1 - 2 * Math.Abs(x - 0.5f));
 				pos = transform.position + new Vector3(point.x, 0, point.y);
 				float angle = Random.Range(0.0f, 360.0f);
 				rotation = transform.rotation * Quaternion.AngleAxis(angle, Vector3.up);
 				float v = map[(int)point.x, (int)point.y];
-				scale = new Vector3(1, 1 + Random.Range(0.0f, 6.0f) * v * v * v, 1);
-				size = buildingPrefab.collisionArea.size;
+				scale = new Vector3(1, verticalScale(v), 1);
+				size = prefab.collisionArea.size;
 				size.Scale(scale);
 			}
-			while (Physics.CheckBox(pos + rotation * (buildingPrefab.collisionArea.min + size / 2), size / 2, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
-			Building building = Instantiate(buildingPrefab, pos, rotation, transform);
+			while (Physics.CheckBox(pos + prefab.collisionArea.center, prefab.collisionArea.extents, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
+			Building building = Instantiate(prefab, pos, rotation, transform);
 			building.transform.localScale = scale;
-		}
-		for (int b = 0; b < treeCount; b++)
-		{
-			Building treePrefab;
-			Vector3 pos;
-			Quaternion rotation;
-			Vector3 scale;
-			Vector3 size;
-			do
-			{
-				treePrefab = treePrefabs[Random.Range(0, treePrefabs.Count)];
-				Vector2 point = RandomPoint(map, x => (1 - x) * (1 - x));
-				pos = transform.position + new Vector3(point.x, 0, point.y);
-				float angle = Random.Range(0.0f, 360.0f);
-				rotation = transform.rotation * Quaternion.AngleAxis(angle, Vector3.up);
-				float v = map[(int)point.x, (int)point.y];
-				scale = new Vector3(1, 1, 1);
-				size = treePrefab.collisionArea.size;
-				size.Scale(scale);
-			}
-			while (Physics.CheckBox(pos + rotation * (treePrefab.collisionArea.min + size / 2), size / 2, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
-			Building tree = Instantiate(treePrefab, pos, rotation, transform);
-			tree.transform.localScale = scale;
 		}
 	}
 

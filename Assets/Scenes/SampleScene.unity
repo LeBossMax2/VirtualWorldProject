@@ -186,6 +186,12 @@ MonoBehaviour:
   - {fileID: 4218412149625215176, guid: db8b9b5c86c9b4a48a4ce0debfa85b21, type: 3}
   - {fileID: 8387729518226036683, guid: 5366fc8b15d8a804b866efba38e78688, type: 3}
   - {fileID: 2104882629739164656, guid: e379d2f179bc8b74b801524fd25fa8fb, type: 3}
+  museumPrefabs:
+  - {fileID: -8421300318413018807, guid: a88d3135096fc3e4f9e20416cc761f2e, type: 3}
+  cityHallPrefabs:
+  - {fileID: 6280941961264607253, guid: fd1545a6015d6a4498f0e3d6947bd3a0, type: 3}
+  prisonPrefabs:
+  - {fileID: 7367334367123609583, guid: d0c5d50d9ea5d714388da738bcb86b49, type: 3}
   ambulancePrefab: {fileID: 5911888858906196459, guid: e2271aaa0fd0c414093ad452147273a5, type: 3}
   policePrefab: {fileID: 9212543363711905767, guid: a11f03514da37d643a8b4a2fcfb934f1, type: 3}
   riverPrefab: {fileID: 3109889104199805082, guid: d38d1dfd73bc5d84c858270c6f616eba, type: 3}
@@ -193,6 +199,9 @@ MonoBehaviour:
   parkCount: 10
   buildingCount: 500
   treeCount: 200
+  museumCount: 1
+  cityHallCount: 1
+  prisonCount: 1
   pointCount: 40
   bikePointCount: 20
   width: 100
@@ -470,8 +479,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 705507993}
   m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
-  m_LocalPosition: {x: 0, y: 3, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 1.1783, y: 2.447, z: -0.1417}
+  m_LocalScale: {x: 0.826, y: 0.826, z: 0.826}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
