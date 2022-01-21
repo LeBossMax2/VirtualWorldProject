@@ -178,6 +178,10 @@ MonoBehaviour:
   - {fileID: 5600819854108696878, guid: b7603f97101e81746bc28be4fe57a092, type: 3}
   bikeRoadPrefabs:
   - {fileID: 5203248914766391988, guid: f7ca54cb13459e94a8c63322745e05ed, type: 3}
+  roadIntersectionPrefabs:
+  - {fileID: 2045745780862181369, guid: 69af198448752ea40891f0d9df67fecc, type: 3}
+  bikeIntersectionPrefabs:
+  - {fileID: 549168744848275526, guid: 28371a8d8aa089f4691e275d7510b0f9, type: 3}
   parkPrefabs:
   - {fileID: 7439288596018939752, guid: 421b25ed5bee6404ea8112597bdca8dc, type: 3}
   buildingPrefabs:

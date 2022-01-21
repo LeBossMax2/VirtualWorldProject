@@ -16,6 +16,8 @@ public class CityBuilder : MonoBehaviour
 	public List<GameObject> roadPrefabs = new List<GameObject>();
 	public List<GameObject> bridgePrefabs = new List<GameObject>();
 	public List<GameObject> bikeRoadPrefabs = new List<GameObject>();
+	public List<GameObject> roadIntersectionPrefabs = new List<GameObject>();
+	public List<GameObject> bikeIntersectionPrefabs = new List<GameObject>();
 	public List<Building> parkPrefabs = new List<Building>();
 	public List<Building> buildingPrefabs = new List<Building>();
 	public List<Building> treePrefabs = new List<Building>();
@@ -58,28 +60,44 @@ public class CityBuilder : MonoBehaviour
 		yield return null; // Skip a frame to update river collisions
 
 		/* Generate Graphs */
-		List<LineSegment> graph_edges = GenerateGraph(pointCount, x => x);
+		List<LineSegment> graph_edges;
+		List<Vector2> intersections;
+		GenerateGraph(pointCount, x => x, 1.3f, true, out graph_edges, out intersections);
 
 		/* Shows Voronoi diagram */
-		for (int i = 0; i < graph_edges.Count; i++) {
-			LineSegment seg = graph_edges[i];
+		foreach (LineSegment seg in graph_edges)
+		{
 			Vector2 left = (Vector2)seg.p0;
 			Vector2 right = (Vector2)seg.p1;
 			//DrawLine (pixels,left, right,Color.blue);
 			CreateRoad(new Vector3(left.x, 0, left.y), new Vector3(right.x, 0, right.y), roadPrefabs, carPrefabs, bridgePrefabs);
 		}
 
-		List<LineSegment> bike_edges = GenerateGraph(bikePointCount, x => 1 - 2 * Math.Abs(x - 0.5f));
+		foreach (Vector2 pos in intersections)
+		{
+			GameObject prefab = roadIntersectionPrefabs[Random.Range(0, roadIntersectionPrefabs.Count)];
+			Instantiate(prefab, transform.position + new Vector3(pos.x, 0, pos.y), Quaternion.identity, transform);
+		}
+
+		List<LineSegment> bike_edges;
+		List<Vector2> bike_intersections;
+		GenerateGraph(bikePointCount, x => 1 - 2 * Math.Abs(x - 0.5f), 0.45f, false, out bike_edges, out bike_intersections);
 
 		/* Shows Voronoi diagram */
-		for (int i = 0; i < bike_edges.Count; i++) {
-			LineSegment seg = bike_edges[i];
+		foreach (LineSegment seg in bike_edges)
+		{
 			Vector2 left = (Vector2)seg.p0;
 			Vector2 right = (Vector2)seg.p1;
 			//DrawLine (pixels,left, right,Color.blue);
 			CreateRoad(new Vector3(left.x, 0, left.y), new Vector3(right.x, 0, right.y), bikeRoadPrefabs, bikePrefabs, new List<GameObject>());
 		}
-		
+
+		foreach (Vector2 pos in bike_intersections)
+		{
+			GameObject prefab = bikeIntersectionPrefabs[Random.Range(0, bikeIntersectionPrefabs.Count)];
+			Instantiate(prefab, transform.position + new Vector3(pos.x, 0, pos.y), Quaternion.identity, transform);
+		}
+
 		/* Apply pixels to texture */
 		tx = new Texture2D(width, height);
 		land.SetTexture("_MainTex", tx);
@@ -136,7 +154,7 @@ public class CityBuilder : MonoBehaviour
 		}
 	}
 
-	private List<LineSegment> GenerateGraph(int pointCount, Func<float, float> probaFunc)
+	private void GenerateGraph(int pointCount, Func<float, float> probaFunc, float roadWidth, bool allowBridges, out List<LineSegment> edges, out List<Vector2> intersections)
 	{
 		/* Create random points points */
 		List<Vector2> points = new List<Vector2>();
@@ -152,32 +170,51 @@ public class CityBuilder : MonoBehaviour
 
 		Voronoi v = new Voronoi(points, colors, new Rect(0, 0, width, height));
 
-		List<LineSegment> edges = new List<LineSegment>();
+		edges = new List<LineSegment>();
+		HashSet<Vertex> vertices = new HashSet<Vertex>();
 
 		// Find edges per vertex
 		foreach (Edge e in v.Edges())
 		{
 			if (!e.visible) continue;
 
-			bool remove = false;
-			foreach (Side s in new[] { Side.LEFT, Side.RIGHT })
+			bool[] onRiver = new bool[2];
+			Side[] sides = new[] { Side.LEFT, Side.RIGHT };
+			for (int i = 0; i < 2; i++)
 			{
-				Vector2 pos = e.clippedEnds[s].Value;
+				Vector2 pos = e.clippedEnds[sides[i]].Value;
 				Vector3 position = transform.position + new Vector3(pos.x, 0, pos.y);
-				bool onRiver = Physics.CheckSphere(position, 1.3f / 2, LayerMask.GetMask("River"), QueryTriggerInteraction.Ignore);
-				if (onRiver)
-				{
-					remove = true;
-					break;
-				}
+				onRiver[i] = Physics.CheckSphere(position, roadWidth / 2, LayerMask.GetMask("River"), QueryTriggerInteraction.Ignore);
 			}
 
-			if (remove) continue;
+			bool removeEdge = onRiver[0] || onRiver[1];
 
-			edges.Add(e.VoronoiEdge());
+			if (!removeEdge && !allowBridges)
+			{
+				// Check if road over water
+				Vector3 left = new Vector3(e.clippedEnds[Side.LEFT].Value.x, 0, e.clippedEnds[Side.LEFT].Value.y);
+				Vector3 right = new Vector3(e.clippedEnds[Side.RIGHT].Value.x, 0, e.clippedEnds[Side.RIGHT].Value.y);
+				Vector3 delta = right - left;
+				Vector3 position = transform.position + left;
+				Quaternion rotation = transform.rotation * Quaternion.LookRotation(delta);
+				Vector3 size = new Vector3(roadWidth, 1.0f, delta.magnitude);
+				removeEdge = Physics.CheckBox(position + delta / 2.0f, size / 2.0f, rotation, LayerMask.GetMask("River"), QueryTriggerInteraction.Ignore);
+			}
+
+			if (removeEdge)
+			{
+				if (e.leftVertex != null && !onRiver[0] && Vector2.Distance(e.clippedEnds[Side.LEFT].Value, e.leftVertex.Coord) < 0.001)
+					vertices.Add(e.leftVertex);
+				if (e.rightVertex != null && !onRiver[1] && Vector2.Distance(e.clippedEnds[Side.RIGHT].Value, e.rightVertex.Coord) < 0.001)
+					vertices.Add(e.rightVertex);
+			}
+			else
+			{
+				edges.Add(e.VoronoiEdge());
+			}
 		}
 
-		return edges;
+		intersections = vertices.Select(v => v.Coord).ToList();
 	}
 
     private void CreateRoad(Vector3 left, Vector3 right, List<GameObject> roadPrefabList, List<Car> vehiclePrefabList, List<GameObject> bridgePrefabList, int depth = 0)
@@ -279,7 +316,7 @@ public class CityBuilder : MonoBehaviour
 				size = prefab.collisionArea.size;
 				size.Scale(scale);
 			}
-			while (Physics.CheckBox(pos + prefab.collisionArea.center, prefab.collisionArea.extents, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
+			while (Physics.CheckBox(pos + rotation * (prefab.collisionArea.min + size / 2), size / 2, rotation, LayerMask.GetMask("Default", "Road", "River"), QueryTriggerInteraction.Ignore));
 			Building building = Instantiate(prefab, pos, rotation, transform);
 			building.transform.localScale = scale;
 		}
