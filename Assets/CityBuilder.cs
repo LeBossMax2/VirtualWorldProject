@@ -47,6 +47,10 @@ public class CityBuilder : MonoBehaviour
 
 	void Start()
     {
+		int seed = Random.Range(int.MinValue, int.MaxValue);
+		Debug.Log("Random.seed " + seed);
+		Random.InitState(seed);
+
 		StartCoroutine(GenerateMap());
     }
 
