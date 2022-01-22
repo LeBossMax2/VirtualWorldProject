@@ -54,14 +54,14 @@ public class Police : Car
                 if (agent.remainingDistance <= 1)
                     yield return null;
                 else 
-                    yield return new WaitForSeconds(0.2f);
+                    yield return new WaitForSeconds(0.1f);
 
-                if (carsToTrack.Count != 0)
+                if (onDuty && carsToTrack.Count != 0)
                 {
                     ReajustDestination();
                 }
             }
-            while (agent.remainingDistance >= 0.2);
+            while (agent.remainingDistance >= 0.2 || (onDuty && carsToTrack.Count != 0));
 
             if (onDuty && agent.remainingDistance <= 0.2)
             {
@@ -77,8 +77,8 @@ public class Police : Car
         if (!carsToTrack.Contains(car))
         {
             carsToTrack.Add(car);
+            SetDestination();
         }
-        SetDestination();
     }
 
     public void StopPolice(Car car)
